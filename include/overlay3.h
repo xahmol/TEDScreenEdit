@@ -12,6 +12,5 @@ void savecharset();
 void changebackgroundcolor();
 void changebordercolor();
 void versioninfo();
-void plot_try();
 
 #endif // __OVERLAY3_H_

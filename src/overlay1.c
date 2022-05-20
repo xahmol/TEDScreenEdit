@@ -89,7 +89,7 @@ void writemode()
             break;
 
         // Toggle upper lower case
-        case CH_F3:
+        case CH_F4:
             if(!charsetchanged)
             {
                 charsetlowercase = (charsetlowercase==0)? 1:0;
@@ -108,7 +108,7 @@ void writemode()
             break;
 
         // Increase luminance
-        case CH_F7:
+        case CH_F2:
             if(plotluminance==7) { newval = 0; } else { newval = plotluminance + 1; }
             if(TED_Attribute(plotcolor,newval,plotblink) == screenbackground)
             {
@@ -128,9 +128,9 @@ void writemode()
             togglestatusbar();
             break;
 
-        //case CH_F8:
-        //    helpscreen_load(4);
-        //    break;
+        case CH_F8:
+            helpscreen_load(4);
+            break;
 
         // Toggle RVS with the RVS ON and RVS OFF keys (control 9 and control 0)
         case CH_RVSON:
@@ -254,7 +254,7 @@ void colorwrite()
             break;
 
         // Toggle upper lower case
-        case CH_F3:
+        case CH_F4:
             if(!charsetchanged)
             {
                 charsetlowercase = (charsetlowercase==0)? 1:0;
@@ -267,9 +267,9 @@ void colorwrite()
             togglestatusbar();
             break;
 
-        //case CH_F8:
-        //    helpscreen_load(4);
-        //    break;            
+        case CH_F8:
+            helpscreen_load(4);
+            break;            
 
         default:
             // If keypress is SHIFT+1-8 select luminance
@@ -534,11 +534,11 @@ void palette()
             break;
 
         // Help screen
-        //case CH_F8:
-        //    windowrestore(0);
-        //    helpscreen_load(2);
-        //    palette_draw();
-        //    break;
+        case CH_F8:
+            windowrestore(0);
+            helpscreen_load(2);
+            palette_draw();
+            break;
         
         default:
             // Store in favourites

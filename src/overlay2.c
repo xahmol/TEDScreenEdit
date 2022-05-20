@@ -149,9 +149,9 @@ void lineandbox(unsigned char draworselect)
             togglestatusbar();
             break;
         
-        //case CH_F8:
-        //    if(select_startx==select_endx && select_starty==select_endy) helpscreen_load(3);
-        //    break;
+        case CH_F8:
+            if(select_startx==select_endx && select_starty==select_endy) helpscreen_load(3);
+            break;
         
         default:
             break;
@@ -229,9 +229,9 @@ void movemode()
             moved=1;
             break;
 
-        //case CH_F8:
-        //    helpscreen_load(3);
-        //    break;
+        case CH_F8:
+            helpscreen_load(3);
+            break;
         
         default:
             break;
@@ -283,7 +283,7 @@ void selectmode()
             togglestatusbar();
         }
 
-        //if(key==CH_F8) { helpscreen_load(3); }
+        if(key==CH_F8) { helpscreen_load(3); }
 
     } while (key !='d' && key !='x' && key !='c' && key != 'p' && key !='a' && key != CH_ESC && key != CH_STOP );
 
@@ -320,9 +320,9 @@ void selectmode()
                     plotmove(movekey);
                     break;
 
-                //case CH_F8:
-                //    helpscreen_load(3);
-                //    break;
+                case CH_F8:
+                    helpscreen_load(3);
+                    break;
 
                 default:
                     break;

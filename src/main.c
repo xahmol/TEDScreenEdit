@@ -410,7 +410,7 @@ void loadoverlay(unsigned char overlay_select)
         // Load overlay file, exit if not found
         if (cbm_load (buffer, bootdevice, NULL) == 0)
         {
-            printf("\nLoading overlay file failed\n");
+            printf("\nloading overlay file failed\n");
             exit(1);
         }
 
@@ -863,6 +863,52 @@ void cursormove(unsigned char left, unsigned char right, unsigned char up, unsig
     }
 }
 
+// Help screens
+void helpscreen_load(unsigned char screennumber)
+{
+    // Function to show selected help screen
+    // Input: screennumber: 1-Main mode, 2-Character editor, 3-SelectMoveLinebox, 4-Write/colorwrite mode
+
+    // Load system charset if needed
+    if(charsetchanged == 1)
+    {
+        TED_CharsetStandard(charsetlowercase);
+    }
+
+    // Set background color to black and switch cursor off
+    bgcolor(COLOR_BLACK);
+    bordercolor(COLOR_BLACK);
+    cursor(0);
+
+    // Load selected help screen
+    sprintf(buffer,"tedse.hsc%u",screennumber);
+
+    if(TED_Load(buffer,bootdevice,COLORMEMORY)<=COLORMEMORY)
+    {
+        messagepopup("insert application disk to view help.",0);
+    }
+    
+    cgetc();
+
+    // Restore screen
+    bgcolor(screenbackground);
+    bordercolor(screenborder);
+    TED_CopyViewPortToTED(SCREENMAPBASE,screenwidth,screenheight,xoffset,yoffset,0,0,40,25);
+    if(showbar) { initstatusbar(); }
+    if(screennumber!=2)
+    {
+        gotoxy(screen_col,screen_row);
+        TED_Plot(screen_row,screen_col,plotscreencode,TED_Attribute(plotcolor,plotluminance,plotblink));
+    }
+    cursor(1);
+
+    // Restore custom charset if needed
+    if(charsetchanged == 1)
+    {
+        TED_CharsetCustom(CHARSET);
+    }
+}
+
 // Application routines
 void plotmove(unsigned char direction)
 {
@@ -908,6 +954,22 @@ void change_plotluminance(unsigned char newval)
     plotluminance=newval;
     textcolor(TED_Attribute(plotcolor, plotluminance,plotblink));
     TED_Plot(screen_row,screen_col,plotscreencode,TED_Attribute(plotcolor, plotluminance,plotblink));
+}
+
+void plot_try()
+{
+    unsigned char key;
+
+    strcpy(programmode,"try");
+    if(showbar) { printstatusbar(); }
+    cursor(0);
+    key = cgetc();
+    if(key==CH_SPACE)
+    {
+        screenmapplot(screen_row+yoffset,screen_col+xoffset,plotscreencode,TED_Attribute(plotcolor, plotluminance, plotblink));
+    }
+    strcpy(programmode,"main");
+    cursor(1);
 }
 
 void showchareditfield()
@@ -1121,6 +1183,7 @@ void main()
 
     // Load and show title screen
     printcentered("load title screen",10,24,20);
+    TED_Load("tedse.tscr",bootdevice,COLORMEMORY);
 
     // Load visual PETSCII map mapping data
     printcentered("load palette map",10,24,20);
@@ -1131,6 +1194,7 @@ void main()
  
     // Wait for key press to start application
     printcentered("press key.",10,24,20);
+    cgetc();
 
     // Clear viewport of titlescreen
     clrscr();
@@ -1280,7 +1344,6 @@ void main()
 
         // Try
         case 't':
-            loadoverlay(3);
             plot_try();
             break;
 
@@ -1328,9 +1391,9 @@ void main()
             break;
 
         // Help screen
-        //case CH_F8:
-        //    helpscreen_load(1);
-        //    break;
+        case CH_F8:
+            helpscreen_load(1);
+            break;
         
         default:
             // 0-9: Favourites select

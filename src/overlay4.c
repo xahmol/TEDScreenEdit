@@ -324,12 +324,12 @@ void chareditor()
             break;
 
         // Help screen
-        //case CH_F8:
-        //    windowrestore(0);
-        //    helpscreen_load(2);
-        //    showchareditfield();
-        //    showchareditgrid(char_screencode);
-        //    break;
+        case CH_F8:
+            windowrestore(0);
+            helpscreen_load(2);
+            showchareditfield();
+            showchareditgrid(char_screencode);
+            break;
 
         default:
             // 0-9: Favourites select

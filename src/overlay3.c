@@ -634,19 +634,3 @@ void versioninfo()
     revers(0);
     textcolor(TED_Attribute(plotcolor,plotluminance,plotblink));
 }
-
-void plot_try()
-{
-    unsigned char key;
-
-    strcpy(programmode,"try");
-    if(showbar) { printstatusbar(); }
-    cursor(0);
-    key = cgetc();
-    if(key==CH_SPACE)
-    {
-        screenmapplot(screen_row+yoffset,screen_col+xoffset,plotscreencode,TED_Attribute(plotcolor, plotluminance, plotblink));
-    }
-    strcpy(programmode,"main");
-    cursor(1);
-}
