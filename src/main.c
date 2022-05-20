@@ -52,13 +52,6 @@ BUT WITHOUT ANY WARRANTY. USE THEM AT YOUR OWN RISK!
 #include <plus4.h>
 #include "defines.h"
 #include "ted_core.h"
-#include "overlay1.h"
-#include "overlay2.h"
-#include "overlay3.h"
-#include "overlay4.h"
-
-// Overlay data
-unsigned char overlay_active = 0;
 
 //Window data
 struct WindowStruct Window[9];
@@ -384,40 +377,6 @@ void togglestatusbar()
         showbar=1;
         initstatusbar();
     }
-}
-
-/* Overlay functions */
-
-void loadoverlay(unsigned char overlay_select)
-{
-    char modebuffer[11];
-
-    // Load memory overlay with given number
-
-    // Returns if overlay allready active
-    if(overlay_select != overlay_active)
-    {
-        overlay_active = overlay_select;
-
-        // Set status bar
-        strcpy(modebuffer,programmode);
-        strcpy(programmode,"loading");
-        if(showbar) { printstatusbar(); }
-
-        // Compose filename
-        sprintf(buffer,"tedse.ovl%u",overlay_select);
-
-        // Load overlay file, exit if not found
-        if (cbm_load (buffer, bootdevice, NULL) == 0)
-        {
-            printf("\nloading overlay file failed\n");
-            exit(1);
-        }
-
-        // Restore statusbar
-        strcpy(programmode,modebuffer);
-        if(showbar) { printstatusbar(); }
-    }   
 }
 
 // Functions for windowing and menu system
@@ -1036,6 +995,1875 @@ void showchareditgrid(unsigned int screencode)
     }
 }
 
+void writemode()
+{
+    // Write mode with screencodes
+
+    unsigned char key, screencode,newval;
+    unsigned char rvs = 0;
+
+    strcpy(programmode,"write");
+
+    do
+    {
+        if(showbar) { printstatusbar(); }
+        key = cgetc();
+        newval = plotluminance;
+
+        switch (key)
+        {
+        // Cursor move
+        case CH_CURS_LEFT:
+        case CH_CURS_RIGHT:
+        case CH_CURS_UP:
+        case CH_CURS_DOWN:
+            plotmove(key);
+            break;
+
+        // Toggle blink
+        case CH_F1:
+            plotblink = (plotblink==0)? 1:0;
+            TED_Plot(screen_row,screen_col,plotscreencode,TED_Attribute(plotcolor,plotluminance,plotblink));
+            break;
+
+        // Toggle upper lower case
+        case CH_F4:
+            if(!charsetchanged)
+            {
+                charsetlowercase = (charsetlowercase==0)? 1:0;
+                TED_CharsetStandard(charsetlowercase);
+            }
+            break;
+
+        // Decrease luminance
+        case CH_F5:
+            if(plotluminance==0) { newval = 7; } else { newval = plotluminance - 1; }
+            if(TED_Attribute(plotcolor,newval,plotblink) == screenbackground)
+            {
+                if(newval==0) { newval = 7; } else { newval--; }
+            }
+            change_plotluminance(newval);
+            break;
+
+        // Increase luminance
+        case CH_F2:
+            if(plotluminance==7) { newval = 0; } else { newval = plotluminance + 1; }
+            if(TED_Attribute(plotcolor,newval,plotblink) == screenbackground)
+            {
+                if(newval==7) { newval = 0; } else { newval++; }
+            }
+            change_plotluminance(newval);
+            break;
+
+        // Delete present screencode and attributes
+        case CH_DEL:
+            screenmapplot(screen_row+yoffset,screen_col+xoffset,CH_SPACE,COLOR_WHITE);
+            TED_Plot(screen_row,screen_col,CH_SPACE,TED_Attribute(plotcolor,plotluminance,plotblink));
+            break;
+
+        // Toggle statusbar
+        case CH_F6:
+            togglestatusbar();
+            break;
+
+        case CH_F8:
+            helpscreen_load(4);
+            break;
+
+        // Toggle RVS with the RVS ON and RVS OFF keys (control 9 and control 0)
+        case CH_RVSON:
+            rvs = 1;
+            break;
+        
+        case CH_RVSOFF:
+            rvs = 0;
+            break;
+
+        // Color control with Control and Commodore keys plus 0-9 key
+        case CH_BLACK:
+            change_plotcolor(0);
+            break;
+        
+        case CH_WHITE:
+            change_plotcolor(1);
+            break;
+        
+        case CH_RED:
+            change_plotcolor(2);
+            break;
+
+        case CH_CYAN:
+            change_plotcolor(3);
+            break;
+
+        case CH_PURPLE:
+            change_plotcolor(4);
+            break;
+
+        case CH_GREEN:
+            change_plotcolor(5);
+            break;
+
+        case CH_BLUE:
+            change_plotcolor(6);
+            break;
+
+        case CH_YELLOW:
+            change_plotcolor(7);
+            break;
+
+        case CH_ORANGE:
+            change_plotcolor(8);
+            break;
+
+        case CH_BROWN:
+            change_plotcolor(9);
+            break;
+            
+        case CH_YELGREEN:
+            change_plotcolor(10);
+            break;
+
+        case CH_PINK:
+            change_plotcolor(11);
+            break;
+
+        case CH_BLUEGREEN:
+            change_plotcolor(12);
+            break;
+
+        case CH_LBLUE:
+            change_plotcolor(13);
+            break;
+
+        case CH_DBLUE:
+            change_plotcolor(14);
+            break;
+
+        case CH_LGREEN:
+            change_plotcolor(15);
+            break;
+
+        // Write printable character                
+        default:
+            if(isprint(key))
+            {
+                if(rvs==0) { screencode = TED_PetsciiToScreenCode(key); } else { screencode = TED_PetsciiToScreenCodeRvs(key); }
+                screenmapplot(screen_row+yoffset,screen_col+xoffset,screencode,TED_Attribute(plotcolor,plotluminance,plotblink));
+                plotmove(CH_CURS_RIGHT);
+            }
+            break;
+        }
+    } while (key != CH_ESC && key != CH_STOP);
+    strcpy(programmode,"main");
+}
+
+void colorwrite()
+{
+    // Write mode with colors
+
+    unsigned char key, attribute;
+
+    strcpy(programmode,"colorwrite");
+    do
+    {
+        if(showbar) { printstatusbar(); }
+        key = cgetc();
+
+        // Get old attribute value
+        attribute = PEEK(screenmap_attraddr(screen_row+yoffset,screen_col+xoffset,screenwidth));
+
+        switch (key)
+        {
+
+        // Cursor move
+        case CH_CURS_LEFT:
+        case CH_CURS_RIGHT:
+        case CH_CURS_UP:
+        case CH_CURS_DOWN:
+            plotmove(key);
+            break;
+
+        // Toggle blink
+        case CH_F1:
+            attribute ^= 0x80;           // Toggle bit 7 for blink
+            POKE(screenmap_attraddr(screen_row+yoffset,screen_col+xoffset,screenwidth),attribute);
+            plotmove(CH_CURS_RIGHT);
+            break;
+
+        // Toggle upper lower case
+        case CH_F4:
+            if(!charsetchanged)
+            {
+                charsetlowercase = (charsetlowercase==0)? 1:0;
+                TED_CharsetStandard(charsetlowercase);
+            }
+            break;
+        
+        // Toggle statusbar
+        case CH_F6:
+            togglestatusbar();
+            break;
+
+        case CH_F8:
+            helpscreen_load(4);
+            break;            
+
+        default:
+            // If keypress is SHIFT+1-8 select luminance
+            if(key>32 && key<42)
+            {
+                attribute &= 0x8f;                  // Erase bits 4-6
+                attribute += (key-33)*16;           // Add color 0-9 with key 0-9
+                POKE(screenmap_attraddr(screen_row+yoffset,screen_col+xoffset,screenwidth),attribute);
+                plotmove(CH_CURS_RIGHT);
+            }
+            // If keypress is 0-9 or A-F select color
+            if(key>47 && key<58)
+            {
+                attribute &= 0xf0;                  // Erase bits 0-3
+                attribute += (key -48);             // Add color 0-9 with key 0-9
+                POKE(screenmap_attraddr(screen_row+yoffset,screen_col+xoffset,screenwidth),attribute);
+                plotmove(CH_CURS_RIGHT);
+            }
+            if(key>64 && key<71)
+            {
+                attribute &= 0xf0;                  // Erase bits 0-3
+                attribute += (key -55);             // Add color 10-15 with key A-F
+                POKE(screenmap_attraddr(screen_row+yoffset,screen_col+xoffset,screenwidth),attribute);
+                plotmove(CH_CURS_RIGHT);
+            }
+            break;
+        }
+    } while (key != CH_ESC && key != CH_STOP);
+    strcpy(programmode,"main");
+}
+
+void palette_draw()
+{
+    // Draw window for character palette
+
+    unsigned char attribute = mc_menupopup;
+    unsigned char x,y;
+    unsigned char counter = 0;
+    unsigned int petsciiaddress = PETSCIIMAP;
+
+    windowsave(0,21,0);
+    TED_FillArea(0,5,CH_INVSPACE,34,21,attribute);
+    textcolor(attribute);
+
+    // Set coordinate of present char if no visual map
+    if(visualmap==0)
+    {
+        rowsel = palettechar/32 + 2;
+        colsel = palettechar%32;
+    }
+
+    // Favourites palette
+    for(x=0;x<10;x++)
+    {
+        TED_Plot(1,6+x,favourites[x]+128,attribute);
+    }
+
+    // Full charsets
+    for(y=0;y<8;y++)
+    {
+        for(x=0;x<32;x++)
+        {
+            if(visualmap)
+            {
+                TED_Plot(3+y,6+x,PEEK(petsciiaddress)+128,attribute);
+                if(PEEK(petsciiaddress++)==palettechar)
+                {
+                    rowsel = y+2;
+                    colsel = x;
+                }
+            }
+            else
+            {
+                TED_Plot(3+y,6+x,counter+128,attribute);
+            }
+            counter++;
+        }
+    }
+
+    // Color palette
+    for(y=0;y<8;y++)
+    {
+        for(x=0;x<16;x++)
+        {
+            TED_Plot(12+y,6+x,CH_INVSPACE,TED_Attribute(x,y,0));
+        }
+    }
+}
+
+unsigned char palette_returnscreencode()
+{
+    // Get screencode from palette position
+
+    unsigned char screencode;
+
+    if(rowsel==0)
+    {
+        screencode = favourites[colsel];
+    }
+    if(rowsel>1 && rowsel<10)
+    {
+        if(visualmap)
+        {
+            screencode = PEEK(PETSCIIMAP+colsel + (rowsel-2)*32);
+        }
+        else
+        {
+            screencode = colsel + (rowsel-2)*32;
+        }
+    }
+}
+
+void palette_statusinfo()
+{
+    // Show status information in palette mode
+
+    textcolor(mc_menupopup);
+    revers(1);
+    if(rowsel==0) { strcpy(buffer,"favorites "); }
+    if(rowsel>1 && rowsel<10) { strcpy(buffer,"characters"); }
+    if(rowsel>10) { strcpy(buffer,"colors    "); }
+    cputsxy(23,12,buffer);
+    if(rowsel<10)
+    {
+        gotoxy(23,14);
+        cprintf("char:  %2x",palette_returnscreencode());
+        cputsxy(23,16,"color:   ");
+        cputsxy(23,17,"lum:     ");
+    }
+    else
+    {
+        cputsxy(23,14,"char:    ");
+        gotoxy(23,16);
+        cprintf("color: %2u",colsel);
+        gotoxy(23,17);
+        cprintf("lum:    %u",rowsel-11);
+    }
+    revers(0);
+}
+
+void palette()
+{
+    // Show character set palette
+
+    unsigned char attribute = mc_menupopup;
+    unsigned char key;
+
+    palettechar = plotscreencode;
+
+    strcpy(programmode,"palette");
+
+    palette_draw();
+    gotoxy(6+colsel,1+rowsel);
+
+    // Get key loop
+    do
+    {
+        if(showbar) { printstatusbar(); }
+        palette_statusinfo();
+        gotoxy(6+colsel,1+rowsel);
+        key=cgetc();
+
+        switch (key)
+        {
+        // Cursor movemeny
+        case CH_CURS_RIGHT:       
+        case CH_CURS_LEFT:
+        case CH_CURS_DOWN:
+        case CH_CURS_UP:
+            if(key==CH_CURS_RIGHT) { colsel++; }
+            if(key==CH_CURS_LEFT)
+            {
+                if(colsel>0)
+                {
+                    colsel--;
+                }
+                else
+                {
+                    if(rowsel==0)
+                    {
+                        rowsel=18;
+                        colsel=15;
+                    }
+                    else
+                    {
+                        if(rowsel==2)
+                        {
+                            rowsel--;
+                            colsel=9;
+                        }
+                        if(rowsel>2 && rowsel<10)
+                        {
+                            rowsel--;
+                            colsel=31;
+                        }
+                        if(rowsel==10)
+                        {
+                            rowsel-=2;
+                            colsel=31;
+                        }
+                        if(rowsel>10)
+                        {
+                            rowsel--;
+                            colsel=15;
+                        }
+                    }
+                }
+            }
+            if(key==CH_CURS_DOWN) { rowsel++; }
+            if(key==CH_CURS_UP)
+            {
+                if(rowsel>0)
+                {
+                    rowsel--;
+                    if(rowsel==1 || rowsel==10) { rowsel--;}
+                }
+                else
+                {
+                    rowsel=18;
+                }
+            }
+            if(colsel>9 && rowsel==0) { colsel=0; rowsel=2; }
+            if(colsel>31) { colsel=0; rowsel++; }
+            if(colsel>15 && rowsel>9) { colsel=0; rowsel++; }
+            if(rowsel>18)
+            {
+                rowsel=0;
+                if(colsel>9) { colsel=9; }
+            }
+            if(rowsel==1 || rowsel==10) { rowsel++;}
+            gotoxy(6+colsel,1+rowsel);
+            break;
+
+        // Select character
+        case CH_SPACE:
+        case CH_ENTER:
+            if(rowsel<10)
+            {
+                palettechar = palette_returnscreencode();
+                plotscreencode = palettechar;
+            }
+            else
+            {
+                plotcolor=colsel;
+                plotluminance=rowsel-11;
+            }
+            key = CH_ESC;
+            break;
+
+        // Toggle visual PETSCII map
+        case 'v':
+            windowrestore(0);
+            palettechar = palette_returnscreencode();
+            visualmap = (visualmap)?0:1;
+            palette_draw();
+            gotoxy(46+colsel,1+rowsel);
+            break;
+
+        // Toggle statusbar
+        case CH_F6:
+            togglestatusbar();
+            break;
+
+        // Help screen
+        case CH_F8:
+            windowrestore(0);
+            helpscreen_load(2);
+            palette_draw();
+            break;
+        
+        default:
+            // Store in favourites
+            if(key>47 && key<58 && rowsel>0 && rowsel<10)
+            {
+                palettechar = palette_returnscreencode();
+                favourites[key-48] = palettechar;
+                TED_Plot(1,key-42,favourites[key-48]+128,attribute);
+            }
+            break;
+        }
+    } while (key != CH_ESC && key != CH_STOP);
+
+    windowrestore(0);
+    textcolor(TED_Attribute(plotcolor,plotluminance,plotblink));
+    gotoxy(screen_col,screen_row);
+    TED_Plot(screen_row,screen_col,plotscreencode,TED_Attribute(plotcolor,plotluminance,plotblink));
+    strcpy(programmode,"main");
+}
+
+void resizewidth()
+{
+    // Function to resize screen canvas width
+
+    unsigned int newwidth = screenwidth;
+    unsigned int maxsize = MEMORYLIMIT - SCREENMAPBASE;
+    unsigned char areyousure = 0;
+    unsigned char sizechanged = 0;
+    unsigned int y;
+    char* ptrend;
+
+    windownew(2,5,12,36,0);
+    revers(1);
+    textcolor(mc_menupopup);
+
+    cputsxy(4,6,"resize canvas width");
+    cputsxy(4,8,"enter new width:");
+
+    sprintf(buffer,"%i",screenwidth);
+    textInput(4,9,buffer,4);
+    newwidth = (unsigned int)strtol(buffer,&ptrend,10);
+
+    if((newwidth*screenheight*2) + 24 > maxsize || newwidth<40 )
+    {
+        cputsxy(4,11,"new size unsupported. press key.");
+        cgetc();
+    }
+    else
+    {
+        if(newwidth < screenwidth)
+        {
+            cputsxy(4,11,"shrinking might delete data.");
+            cputsxy(4,12,"are you sure?");
+            areyousure = menupulldown(20,13,5,0);
+            if(areyousure==1)
+            {
+                for(y=1;y<screenheight;y++)
+                {
+                    memcpy((void*)SCREENMEMORY,(void*)screenmap_attraddr(y,0,screenwidth),newwidth);
+                    memcpy((void*)screenmap_attraddr(y,0,newwidth),(void*)SCREENMEMORY,newwidth);
+                }
+                for(y=0;y<screenheight;y++)
+                {
+                    memcpy((void*)SCREENMEMORY,(void*)screenmap_screenaddr(y,0,screenwidth,screenheight),newwidth);
+                    memcpy((void*)screenmap_screenaddr(y,0,newwidth,screenheight),(void*)SCREENMEMORY,newwidth);
+                }
+                if(screen_col>newwidth-1) { screen_col=newwidth-1; }
+                sizechanged = 1;
+            }
+        }
+        if(newwidth > screenwidth)
+        {
+            for(y=0;y<screenheight;y++)
+            {
+                memcpy((void*)SCREENMEMORY,(void*)screenmap_screenaddr(screenheight-y-1,0,screenwidth,screenheight),screenwidth);
+                memcpy((void*)screenmap_screenaddr(screenheight-y-1,0,newwidth,screenheight),(void*)SCREENMEMORY,screenwidth);
+                memset((void*)screenmap_screenaddr(screenheight-y-1,screenwidth,newwidth,screenheight),CH_SPACE,newwidth-screenwidth);
+            }
+            for(y=0;y<screenheight;y++)
+            {
+                memcpy((void*)SCREENMEMORY,(void*)screenmap_attraddr(screenheight-y-1,0,screenwidth),screenwidth);
+                memcpy((void*)screenmap_attraddr(screenheight-y-1,0,newwidth),(void*)SCREENMEMORY,screenwidth);
+                memset((void*)screenmap_attraddr(screenheight-y-1,screenwidth,newwidth),COLOR_WHITE,newwidth-screenwidth);
+            }
+            sizechanged = 1;
+        }
+    }
+
+    windowrestore(0);
+
+    if(sizechanged==1)
+    {
+        screenwidth = newwidth;
+        screentotal = screenwidth * screenheight;
+        xoffset = 0;
+        placesignature();
+        TED_CopyViewPortToTED(SCREENMAPBASE,screenwidth,screenheight,xoffset,yoffset,0,0,40,25);
+        sprintf(pulldownmenutitles[0][0],"width:    %5i ",screenwidth);
+        menuplacebar();
+        if(showbar) { initstatusbar(); }
+    }
+}
+
+void plotvisible(unsigned char row, unsigned char col, unsigned char setorrestore)
+{
+    // Plot or erase part of line or box if in visible viewport
+    // Input: row, column, and flag setorrestore to plot new value (1) or restore old value (0)
+
+
+    if(row>=yoffset && row<=yoffset+24 && col>=xoffset && col<=xoffset+79)
+    {
+        if(setorrestore==1)
+        {
+            TED_Plot(row-yoffset, col-xoffset,plotscreencode,TED_Attribute(plotcolor,plotluminance,plotblink));
+        }
+        else
+        {
+            TED_Plot(row-yoffset, col-xoffset,PEEK(screenmap_screenaddr(row,col,screenwidth,screenheight)),PEEK(screenmap_attraddr(row,col,screenwidth)));
+        }
+    }
+}
+
+void lineandbox(unsigned char draworselect)
+{
+    // Select line or box from upper left corner using cursor keys, ESC for cancel and ENTER for accept
+    // Input: draworselect: Choose select mode (0) or draw mode (1)
+
+    unsigned char key;
+    unsigned char x,y;
+
+    select_startx = screen_col + xoffset;
+    select_starty = screen_row + yoffset;
+    select_endx = select_startx;
+    select_endy = select_starty;
+    select_accept = 0;
+
+    if(draworselect)
+    {
+        strcpy(programmode,"line/box");
+    }
+
+    do
+    {
+        if(showbar) { printstatusbar(); }
+        key = cgetc();
+
+        switch (key)
+        {
+        case CH_CURS_RIGHT:
+            cursormove(0,1,0,0);
+            select_endx = screen_col + xoffset;
+            for(y=select_starty;y<select_endy+1;y++)
+            {
+                plotvisible(y,select_endx,1);
+            }
+            break;
+
+        case CH_CURS_LEFT:
+            if(select_endx>select_startx)
+            {
+                cursormove(1,0,0,0);
+                for(y=select_starty;y<select_endy+1;y++)
+                {
+                    plotvisible(y,select_endx,0);
+                }
+                select_endx = screen_col + xoffset;
+            }
+            break;
+
+        case CH_CURS_UP:
+            if(select_endy>select_starty)
+            {
+                cursormove(0,0,1,0);
+                for(x=select_startx;x<select_endx+1;x++)
+                {
+                    plotvisible(select_endy,x,0);
+                }
+                select_endy = screen_row + yoffset;
+            }
+            break;
+
+        case CH_CURS_DOWN:
+            cursormove(0,0,0,1);
+            select_endy = screen_row + yoffset;
+            for(x=select_startx;x<select_endx+1;x++)
+            {
+                plotvisible(select_endy,x,1);
+            }
+            break;
+
+        // Toggle statusbar
+        case CH_F6:
+            togglestatusbar();
+            break;
+        
+        case CH_F8:
+            if(select_startx==select_endx && select_starty==select_endy) helpscreen_load(3);
+            break;
+        
+        default:
+            break;
+        }
+    } while (key!=CH_ESC && key != CH_STOP && key != CH_ENTER);
+
+    if(key==CH_ENTER)
+    {
+        select_width = select_endx-select_startx+1;
+        select_height = select_endy-select_starty+1;
+    }  
+
+    if(key==CH_ENTER && draworselect ==1)
+    {
+        for(y=select_starty;y<select_endy+1;y++)
+        {
+            memset((void*)screenmap_screenaddr(y,select_startx,screenwidth,screenheight),plotscreencode,select_width);
+            memset((void*)screenmap_attraddr(y,select_startx,screenwidth),TED_Attribute(plotcolor,plotluminance,plotblink),select_width);
+        }
+        TED_Plot(screen_row,screen_col,plotscreencode,TED_Attribute(plotcolor,plotluminance,plotblink));
+    }
+    else
+    {
+        TED_CopyViewPortToTED(SCREENMAPBASE,screenwidth,screenheight,xoffset,yoffset,0,0,40,25);
+        if(showbar) { initstatusbar(); }
+        if(key==CH_ENTER) { select_accept=1; }
+    }
+    if(draworselect)
+    {
+        strcpy(programmode,"main");
+    }
+}
+
+void movemode()
+{
+    // Function to move the 80x25 viewport
+
+    unsigned char key,y;
+    unsigned char moved = 0;
+
+    strcpy(programmode,"move");
+
+    cursor(0);
+    TED_Plot(screen_row,screen_col,PEEK(screenmap_screenaddr(yoffset+screen_row,xoffset+screen_col,screenwidth,screenheight)),PEEK(screenmap_attraddr(yoffset+screen_row,xoffset+screen_col,screenwidth)));
+    
+    if(showbar) { hidestatusbar(); }
+
+    do
+    {
+        key = cgetc();
+
+        switch (key)
+        {
+        case CH_CURS_RIGHT:
+            TED_ScrollMove(0,0,40,25,2,1);
+            TED_VChar(0,0,CH_SPACE,25,COLOR_WHITE);
+            moved=1;
+            break;
+        
+        case CH_CURS_LEFT:
+            TED_ScrollMove(0,0,40,25,1,1);
+            TED_VChar(0,39,CH_SPACE,25,COLOR_WHITE);
+            moved=1;
+            break;
+
+        case CH_CURS_UP:
+            TED_ScrollMove(0,0,40,25,8,1);
+            TED_HChar(24,0,CH_SPACE,40,COLOR_WHITE);
+            moved=1;
+            break;
+        
+        case CH_CURS_DOWN:
+            TED_ScrollMove(0,0,40,25,4,1);
+            TED_HChar(0,0,CH_SPACE,40,COLOR_WHITE);
+            moved=1;
+            break;
+
+        case CH_F8:
+            helpscreen_load(3);
+            break;
+        
+        default:
+            break;
+        }
+    } while (key != CH_ENTER && key != CH_ESC && key != CH_STOP);
+
+    if(moved==1)
+    {
+        if(key==CH_ENTER)
+        {
+            for(y=0;y<25;y++)
+            {
+                memcpy((void*)screenmap_screenaddr(y+yoffset,xoffset,screenwidth,screenheight),(void*)(SCREENMEMORY+(y*40)),40);
+                memcpy((void*)screenmap_attraddr(y+yoffset,xoffset,screenwidth),(void*)(COLORMEMORY+(y*40)),40);
+            }
+        }
+        TED_CopyViewPortToTED(SCREENMAPBASE,screenwidth,screenheight,xoffset,yoffset,0,0,40,25);
+        if(showbar) { initstatusbar(); }
+    }
+
+    cursor(1);
+    TED_Plot(screen_row,screen_col,plotscreencode,TED_Attribute(plotcolor,plotluminance,plotblink));
+    strcpy(programmode,"main");
+    if(showbar) { printstatusbar(); }
+}
+
+void selectmode()
+{
+    // Function to select a screen area to delete, cut, copy or paint
+
+    unsigned char key,movekey,x,y,ycount;
+
+    strcpy(programmode,"select");
+
+    movekey = 0;
+    lineandbox(0);
+    if(select_accept == 0) { return; }
+
+    strcpy(programmode,"x/c/d/a/p?");
+
+    do
+    {
+        if(showbar) { printstatusbar(); }
+        key=cgetc();
+
+        // Toggle statusbar
+        if(key==CH_F6)
+        {
+            togglestatusbar();
+        }
+
+        if(key==CH_F8) { helpscreen_load(3); }
+
+    } while (key !='d' && key !='x' && key !='c' && key != 'p' && key !='a' && key != CH_ESC && key != CH_STOP );
+
+    if(key!=CH_ESC && key != CH_STOP)
+    {
+        if((key=='x' || key=='c')&&(select_width>4096))
+        {
+            messagepopup("selection too big.",1);
+            return;
+        }
+
+        if(key=='x' || key=='c')
+        {
+            if(key=='x')
+            {
+                strcpy(programmode,"cut");
+            }
+            else
+            {
+                strcpy(programmode,"copy");
+            }
+            do
+            {
+                if(showbar) { printstatusbar(); }
+                movekey = cgetc();
+
+                switch (movekey)
+                {
+                // Cursor move
+                case CH_CURS_LEFT:
+                case CH_CURS_RIGHT:
+                case CH_CURS_UP:
+                case CH_CURS_DOWN:
+                    plotmove(movekey);
+                    break;
+
+                case CH_F8:
+                    helpscreen_load(3);
+                    break;
+
+                default:
+                    break;
+                }
+            } while (movekey != CH_ESC && movekey != CH_STOP && movekey != CH_ENTER);
+
+            if(movekey==CH_ENTER)
+            {
+                if((screen_col+xoffset+select_width>screenwidth) || (screen_row+yoffset+select_height>screenheight))
+                {
+                    messagepopup("selection does not fit.",1);
+                    return;
+                }
+
+                for(ycount=0;ycount<select_height;ycount++)
+                {
+                    y=(screen_row+yoffset>=select_starty)? select_height-ycount-1 : ycount;
+                    memcpy((void*)SCREENMEMORY,(void*)screenmap_attraddr(select_starty+y,select_startx,screenwidth),select_width);
+                    if(key=='x') { memset((void*)screenmap_attraddr(select_starty+y,select_startx,screenwidth),COLOR_WHITE,select_width); }
+                    memcpy((void*)screenmap_attraddr(screen_row+yoffset+y,screen_col+xoffset,screenwidth),(void*)SCREENMEMORY,select_width);
+                    memcpy((void*)SCREENMEMORY,(void*)screenmap_screenaddr(select_starty+y,select_startx,screenwidth,screenheight),select_width);
+                    if(key=='x') {memset((void*)screenmap_screenaddr(select_starty+y,select_startx,screenwidth,screenheight),CH_SPACE,select_width); }
+                    memcpy((void*)screenmap_screenaddr(screen_row+yoffset+y,screen_col+xoffset,screenwidth,screenheight),(void*)SCREENMEMORY,select_width);
+                }
+            }
+        }
+
+        if( key=='d')
+        {
+            for(y=0;y<select_height;y++)
+            {
+                memset((void*)screenmap_screenaddr(select_starty+y,select_startx,screenwidth,screenheight),CH_SPACE,select_width);
+                memset((void*)screenmap_attraddr(select_starty+y,select_startx,screenwidth),COLOR_WHITE,select_width);
+            }
+        }
+
+        if(key=='a')
+        {
+            for(y=0;y<select_height;y++)
+            {
+                memset((void*)screenmap_attraddr(select_starty+y,select_startx,screenwidth),TED_Attribute(plotcolor,plotluminance,plotblink),select_width);
+            }
+        }
+
+        if(key=='p')
+        {
+            for(y=0;y<select_height;y++)
+            {
+                for(x=0;x<select_width;x++)
+                {
+                    POKE(screenmap_attraddr(select_starty+y,select_startx+x,screenwidth),(PEEK(screenmap_attraddr(select_starty+y,select_startx+x,screenwidth)) & 0xf0)+plotcolor);
+                }
+            }
+        }
+
+        TED_CopyViewPortToTED(SCREENMAPBASE,screenwidth,screenheight,xoffset,yoffset,0,0,40,25);
+        if(showbar) { initstatusbar(); }
+        TED_Plot(screen_row,screen_col,plotscreencode,TED_Attribute(plotcolor,plotluminance,plotblink));
+    }
+    strcpy(programmode,"main");
+}
+
+void resizeheight()
+{
+    // Function to resize screen camvas height
+
+    unsigned int newheight = screenheight;
+    unsigned int maxsize = MEMORYLIMIT - SCREENMAPBASE;
+    unsigned char areyousure = 0;
+    unsigned char sizechanged = 0;
+    unsigned char y;
+    char* ptrend;
+
+    windownew(2,5,12,36,0);
+    revers(1);
+    textcolor(mc_menupopup);
+
+    cputsxy(4,6,"resize canvas height");
+    cputsxy(4,8,"enter new height:");
+
+    sprintf(buffer,"%i",screenheight);
+    textInput(4,9,buffer,4);
+    newheight = (unsigned int)strtol(buffer,&ptrend,10);
+
+    if((newheight*screenwidth*2) + 48 > maxsize || newheight < 25)
+    {
+        cputsxy(4,11,"new size unsupported. press key.");
+        cgetc();
+    }
+    else
+    {
+        if(newheight < screenheight)
+        {
+            cputsxy(4,11,"shrinking might delete data.");
+            cputsxy(4,12,"are you sure?");
+            areyousure = menupulldown(20,13,5,0);
+            if(areyousure==1)
+            {
+                memcpy((void*)screenmap_screenaddr(0,0,screenwidth,newheight),(void*)screenmap_screenaddr(0,0,screenwidth,screenheight),screenheight*screenwidth);
+                if(screen_row>newheight-1) { screen_row=newheight-1; }
+                sizechanged = 1;
+            }
+        }
+        if(newheight > screenheight)
+        {
+            for(y=0;y<screenheight;y++)
+            {
+                memcpy((void*)screenmap_screenaddr(screenheight-y-1,0,screenwidth,newheight),(void*)screenmap_screenaddr(screenheight-y-1,0,screenwidth,screenheight),screenwidth);
+            }
+            memset((void*)screenmap_screenaddr(screenheight,0,screenwidth,newheight),CH_SPACE,(newheight-screenheight)*screenwidth);
+            memset((void*)screenmap_attraddr(screenheight,0,screenwidth),COLOR_WHITE,(newheight-screenheight)*screenwidth);
+            sizechanged = 1;
+        }
+    }
+
+    windowrestore(0);
+
+    if(sizechanged==1)
+    {
+        screenheight = newheight;
+        screentotal = screenwidth * screenheight;
+        yoffset=0;
+        placesignature();
+        TED_CopyViewPortToTED(SCREENMAPBASE,screenwidth,screenheight,xoffset,yoffset,0,0,40,25);
+        sprintf(pulldownmenutitles[0][1],"height:   %5i ",screenheight);
+        menuplacebar();
+        if(showbar) { initstatusbar(); }
+    }
+}
+
+int chooseidandfilename(char* headertext, unsigned char maxlen)
+{
+    // Function to present dialogue to enter device id and filename
+    // Input: Headertext to print, maximum length of filename input string
+
+    unsigned char newtargetdevice;
+    unsigned char valid = 0;
+    char* ptrend;
+
+    windownew(2,5,12,36,0);
+    revers(1);
+    textcolor(mc_menupopup);
+    cputsxy(4,6,headertext);
+    do
+    {
+        cputsxy(4,8,"choose drive id:");
+        sprintf(buffer,"%u",targetdevice);
+        if(textInput(4,9,buffer,2)==-1) { return -1; }
+        newtargetdevice = (unsigned char)strtol(buffer,&ptrend,10);
+        if(newtargetdevice > 7 && newtargetdevice<31)
+        {
+            valid = 1;
+            targetdevice=newtargetdevice;
+        }
+        else{
+            cputsxy(4,10,"invalid id. enter valid one.");
+        }
+    } while (valid==0);
+    cputsxy(4,10,"choose filename:            ");
+    valid = textInput(4,11,filename,maxlen);
+    revers(0);
+    textcolor(TED_Attribute(plotcolor,plotluminance,plotblink));
+    return valid;
+}
+
+unsigned char checkiffileexists(char* filetocheck, unsigned char id)
+{
+    // Check if file exists and, if yes, ask confirmation of overwrite
+    
+    unsigned char proceed = 1;
+    unsigned char yesno;
+    unsigned char error;
+
+    sprintf(buffer,"r0:%s=%s",filetocheck,filetocheck);
+    error = cmd(id,buffer);
+
+    if (error == 63)
+    {
+        yesno = areyousure("file exists.",0);
+        if(yesno==2)
+        {
+            proceed = 0;
+        }
+        else
+        {
+            proceed = 2;
+        }
+    }
+
+    return proceed;
+}
+
+void loadscreenmap()
+{
+    // Function to load screenmap
+
+    unsigned int lastreadaddress, newwidth, newheight;
+    unsigned int maxsize = MEMORYLIMIT - SCREENMAPBASE;
+    char* ptrend;
+    int escapeflag;
+  
+    escapeflag = chooseidandfilename("load screen",15);
+
+    if(escapeflag==-1) { windowrestore(0); return; }
+
+    revers(1);
+    textcolor(mc_menupopup);
+
+    cputsxy(4,12,"enter screen width:");
+    sprintf(buffer,"%i",screenwidth);
+    textInput(4,13,buffer,4);
+    newwidth = (unsigned int)strtol(buffer,&ptrend,10);
+
+    cputsxy(4,14,"enter screen height:");
+    sprintf(buffer,"%i",screenheight);
+    textInput(4,15,buffer,4);
+    newheight = (unsigned int)strtol(buffer,&ptrend,10);
+
+    if((newwidth*newheight*2) + 24 > maxsize || newwidth<40 || newheight<25)
+    {
+        cputsxy(4,16,"new size unsupported. Press key.");
+        cgetc();
+        windowrestore(0);
+    }
+    else
+    {
+        windowrestore(0);
+
+        lastreadaddress = TED_Load(filename,targetdevice,SCREENMAPBASE);
+
+        if(lastreadaddress>SCREENMAPBASE)
+        {
+            windowrestore(0);
+            screenwidth = newwidth;
+            screenheight = newheight;
+            TED_CopyViewPortToTED(SCREENMAPBASE,screenwidth,screenheight,xoffset,yoffset,0,0,40,25);
+            windowsave(0,1,0);
+            menuplacebar();
+            if(showbar) { initstatusbar(); }
+        }
+    }
+
+    revers(0);
+    textcolor(TED_Attribute(plotcolor,plotluminance,plotblink));
+}
+
+void savescreenmap()
+{
+    // Function to save screenmap
+
+    unsigned char error, overwrite;
+    int escapeflag;
+  
+    escapeflag = chooseidandfilename("save screen",15);
+
+    windowrestore(0);
+
+    if(escapeflag==-1) { return; }
+
+    overwrite = checkiffileexists(filename,targetdevice);
+
+    if(overwrite)
+    {
+        // Scratch old file
+        if(overwrite==2)
+        {
+            sprintf(buffer,"s:%s",filename);
+            cmd(targetdevice,buffer);
+        }
+
+        // Set device ID
+	    cbm_k_setlfs(0, targetdevice, 0);
+    
+	    // Set filename
+	    cbm_k_setnam(filename);
+    
+	    // Load from file to memory
+	    error = cbm_k_save(SCREENMAPBASE,SCREENMAPBASE+(screenwidth*screenheight*2)+48);
+    
+        if(error) { fileerrormessage(error,0); }
+    }
+}
+
+void saveproject()
+{
+    // Function to save project (screen, charsets and metadata)
+
+    unsigned char error,overwrite;
+    char projbuffer[21];
+    char tempfilename[21];
+    int escapeflag;
+  
+    escapeflag = chooseidandfilename("save project",10);
+
+    windowrestore(0);
+
+    if(escapeflag==-1) { return; }
+
+    sprintf(tempfilename,"%s.proj",filename);
+
+    overwrite = checkiffileexists(filename,targetdevice);
+
+    if(overwrite)
+    {
+        // Scratch old files
+        if(overwrite==2)
+        {
+            sprintf(buffer,"s:%s.proj",filename);
+            cmd(targetdevice,buffer);
+            sprintf(buffer,"s:%s.scrn",filename);
+            cmd(targetdevice,buffer);
+            sprintf(buffer,"s:%s.chrs",filename);
+            cmd(targetdevice,buffer);
+            sprintf(buffer,"s:%s.chra",filename);
+            cmd(targetdevice,buffer);
+        }
+
+        // Store project data to buffer variable
+        projbuffer[ 0] = charsetchanged;
+        projbuffer[ 1] = charsetlowercase;
+        projbuffer[ 2] = screen_col;
+        projbuffer[ 3] = screen_row;
+        projbuffer[ 4] = (screenwidth>>8) & 0xff;
+        projbuffer[ 5] = screenwidth & 0xff;
+        projbuffer[ 6] = (screenheight>>8) & 0xff;
+        projbuffer[ 7] = screenheight & 0xff;
+        projbuffer[ 8] = (screentotal>>8) & 0xff;
+        projbuffer[ 9] = screentotal & 0xff;
+        projbuffer[10] = screenbackground;
+        projbuffer[11] = mc_mb_normal;
+        projbuffer[12] = mc_mb_select;
+        projbuffer[13] = mc_pd_normal;
+        projbuffer[14] = mc_pd_select;
+        projbuffer[15] = mc_menupopup;
+        projbuffer[16] = plotscreencode;
+        projbuffer[17] = plotcolor;
+        projbuffer[18] = plotluminance;
+        projbuffer[19] = plotblink;
+        projbuffer[20] = screenborder;
+	    cbm_k_setlfs(0, targetdevice, 0);
+        sprintf(buffer,"%s.proj",filename);
+	    cbm_k_setnam(buffer);
+	    error = cbm_k_save((unsigned int)projbuffer,(unsigned int)projbuffer+21);
+        if(error) { fileerrormessage(error,0); }
+
+        // Store screen data
+        cbm_k_setlfs(0, targetdevice, 0);
+        sprintf(buffer,"%s.scrn",filename);
+	    cbm_k_setnam(buffer);
+	    error = cbm_k_save(SCREENMAPBASE,SCREENMAPBASE+(screenwidth*screenheight*2)+24);
+        if(error) { fileerrormessage(error,0); }
+
+        // Store charset
+        if(charsetchanged==1)
+        {
+            cbm_k_setlfs(0, targetdevice, 0);
+            sprintf(buffer,"%s.chrs",filename);
+	        cbm_k_setnam(buffer);
+	        error = cbm_k_save(CHARSET,CHARSET+128*8);
+            if(error) { fileerrormessage(error,0); }
+        }   
+    }
+}
+
+void loadproject()
+{
+    // Function to load project (screen, charsets and metadata)
+
+    unsigned int lastreadaddress;
+    unsigned char projbuffer[21];
+    int escapeflag;
+  
+    escapeflag = chooseidandfilename("load project",10);
+
+    windowrestore(0);
+
+    if(escapeflag==-1) { return; }
+
+    // Load project variables
+    sprintf(buffer,"%s.proj",filename);
+	cbm_k_setlfs(0,targetdevice, 0);
+	cbm_k_setnam(buffer);
+	lastreadaddress = cbm_k_load(0,(unsigned int)projbuffer);
+    if(lastreadaddress<=(unsigned int)projbuffer) { return; }
+    charsetchanged          = projbuffer[ 0];
+    charsetlowercase        = projbuffer[ 1];
+    screen_col              = projbuffer[ 2];
+    screen_row              = projbuffer[ 3];
+    screenwidth             = projbuffer[ 4]*256+projbuffer[ 5];
+    sprintf(pulldownmenutitles[0][0],"width:    %5i ",screenwidth);
+    screenheight            = projbuffer[ 6]*256+projbuffer [7];
+    sprintf(pulldownmenutitles[0][1],"height:   %5i ",screenheight);
+    screentotal             = projbuffer[ 8]*256+projbuffer[ 9];
+    screenbackground        = projbuffer[10];
+    bgcolor(screenbackground);
+    sprintf(pulldownmenutitles[0][2],"background: %3i ",screenbackground);
+    mc_mb_normal            = projbuffer[11];
+    mc_mb_select            = projbuffer[12];
+    mc_pd_normal            = projbuffer[13];
+    mc_pd_select            = projbuffer[14];
+    mc_menupopup            = projbuffer[15];
+    plotscreencode          = projbuffer[16];
+    plotcolor               = projbuffer[17];
+    plotluminance           = projbuffer[18];
+    plotblink               = projbuffer[19];
+    screenborder            = projbuffer[20];
+    sprintf(pulldownmenutitles[0][3],"border:     %3i ",screenborder);
+
+    // Load screen
+    sprintf(buffer,"%s.scrn",filename);
+    lastreadaddress = TED_Load(buffer,targetdevice,SCREENMAPBASE);
+    if(lastreadaddress>SCREENMAPBASE)
+    {
+        windowrestore(0);
+        TED_CopyViewPortToTED(SCREENMAPBASE,screenwidth,screenheight,xoffset,yoffset,0,0,40,25);
+        windowsave(0,1,0);
+        menuplacebar();
+        if(showbar) { initstatusbar(); }
+    }
+
+    // Load charset
+    if(charsetchanged==1)
+    {
+        sprintf(buffer,"%s.chrs",filename);
+        TED_Load(buffer,targetdevice,CHARSET);
+    }
+}
+
+void loadcharset()
+{
+    // Function to load charset
+    // Input: stdoralt: standard charset (0) or alternate charset (1)
+
+    unsigned int lastreadaddress;
+    int escapeflag;
+  
+    escapeflag = chooseidandfilename("load character set",15);
+
+    windowrestore(0);
+
+    if(escapeflag==-1) { return; }
+
+    lastreadaddress = TED_Load(filename,targetdevice,CHARSET);
+
+    if(lastreadaddress>CHARSET)
+    {
+        charsetchanged=1;
+    }
+}
+
+void savecharset()
+{
+    // Function to save charset
+    // Input: stdoralt: standard charset (0) or alternate charset (1)
+
+    unsigned char error;
+    int escapeflag;
+  
+    escapeflag = chooseidandfilename("save character set",15);
+
+    windowrestore(0);
+
+    if(escapeflag==-1) { return; }
+
+    if(checkiffileexists(filename,targetdevice)==1)
+    {
+        // Scratch old file
+        sprintf(buffer,"s:%s",filename);
+        cmd(targetdevice,buffer);
+
+        // Set device ID
+	    cbm_k_setlfs(0, targetdevice, 0);
+
+	    // Set filename
+	    cbm_k_setnam(filename);
+    
+	    // Load from file to memory
+	    error = cbm_k_save(CHARSET,CHARSET+128*8);
+
+
+        if(error) { fileerrormessage(error,0); }
+    }
+}
+
+void changebackgroundcolor()
+{
+    // Function to change background color
+
+    unsigned char key;
+    unsigned char newcolor = screenbackground%16;
+    unsigned char newluminance = screenbackground/16;
+    unsigned char changed = 0;
+
+    windownew(2,5,13,36,0);
+
+    revers(1);
+    textcolor(mc_menupopup);
+
+    cputsxy(4,6,"change background color");
+    sprintf(buffer,"color: %2i lum: %2i",newcolor,newluminance);
+    cputsxy(4,8,buffer);
+    cputsxy(4,10,"press:");
+    cputsxy(4,11,"+:     increase color number");
+    cputsxy(4,12,"-:     decrease color number");
+    cputsxy(4,13,".:     increase luminance");
+    cputsxy(4,14,".:     decrease luminance");
+    cputsxy(4,15,"enter: accept color");
+    cputsxy(4,16,"esc:   cancel");
+
+    do
+    {
+        do
+        {
+            key = cgetc();
+        } while (key != CH_ENTER && key != CH_ESC && key !=CH_STOP && key != '+' && key != '-'  && key != '.' && key != ',');
+
+        switch (key)
+        {
+        case '+':
+            newcolor++;
+            if(newcolor>15) { newcolor = 0; }
+            changed=1;
+            break;
+
+        case '-':
+            if(newcolor==0) { newcolor = 15; } else { newcolor--; }
+            changed=1;
+            break;
+        
+        case '.':
+            newluminance++;
+            if(newluminance>7) { newluminance = 0; }
+            changed=1;
+            break;
+
+        case ',':
+            if(newluminance==0) { newluminance = 7; } else { newluminance--; }
+            changed=1;
+            break;
+        
+        case CH_ESC:
+        case CH_STOP:
+            changed=0;
+            bgcolor(screenbackground);
+            break;
+
+        default:
+            break;
+        }
+
+        if(changed == 1)
+        {
+            bgcolor(TED_Attribute(newcolor,newluminance,0));
+            sprintf(buffer,"color: %2i lum: %2i",newcolor,newluminance);
+            cputsxy(4,8,buffer);
+        }
+    } while (key != CH_ENTER && key != CH_ESC && key != CH_STOP );
+    
+    if(changed==1)
+    {
+        screenbackground=TED_Attribute(newcolor,newluminance,0);
+
+        // Change menu palette based on background color
+
+        // Default palette if black or dark grey background
+        if(newcolor==0)
+        {
+            mc_mb_normal = COLOR_LIGHTGREEN;
+            mc_mb_select = COLOR_WHITE;
+            mc_pd_normal = COLOR_CYAN;
+            mc_pd_select = COLOR_YELLOW;
+            mc_menupopup = COLOR_WHITE;
+        }
+        else
+        {
+            // Palette for background colors with luminance 4 or higher
+            if(newluminance>3)
+            {
+                mc_mb_normal = COLOR_BLACK;
+                mc_mb_select = COLOR_WHITE;
+                mc_pd_normal = COLOR_BLACK;
+                mc_pd_select = COLOR_WHITE;
+                mc_menupopup = COLOR_BLACK;
+            }
+            // Palette for background colors with luminance 3 or lower
+            else
+            {
+                mc_mb_normal = COLOR_WHITE;
+                mc_mb_select = COLOR_BLACK;
+                mc_pd_normal = COLOR_WHITE;
+                mc_pd_select = COLOR_BLACK;
+                mc_menupopup = COLOR_WHITE;
+            }
+        }
+                
+        sprintf(pulldownmenutitles[0][2],"background: %3i ",screenbackground);
+    }
+    
+    windowrestore(0);
+    revers(0);
+    textcolor(TED_Attribute(plotcolor,plotluminance,plotblink));    
+}
+
+void changebordercolor()
+{
+    // Function to change background color
+
+    unsigned char key;
+    unsigned char newcolor = screenborder%16;
+    unsigned char newluminance = screenborder/16;
+    unsigned char changed = 0;
+
+    windownew(2,5,13,36,0);
+
+    revers(1);
+    textcolor(mc_menupopup);
+
+    cputsxy(4,6,"change border color");
+    sprintf(buffer,"color: %2i lum: %2i",newcolor,newluminance);
+    cputsxy(4,8,buffer);
+    cputsxy(4,10,"press:");
+    cputsxy(4,11,"+:     increase color number");
+    cputsxy(4,12,"-:     decrease color number");
+    cputsxy(4,13,".:     increase luminance");
+    cputsxy(4,14,".:     decrease luminance");
+    cputsxy(4,15,"enter: accept color");
+    cputsxy(4,16,"esc:   cancel");
+
+    do
+    {
+        do
+        {
+            key = cgetc();
+        } while (key != CH_ENTER && key != CH_ESC && key !=CH_STOP && key != '+' && key != '-'  && key != '.' && key != ',');
+
+        switch (key)
+        {
+        case '+':
+            newcolor++;
+            if(newcolor>15) { newcolor = 0; }
+            changed=1;
+            break;
+
+        case '-':
+            if(newcolor==0) { newcolor = 15; } else { newcolor--; }
+            changed=1;
+            break;
+        
+        case '.':
+            newluminance++;
+            if(newluminance>7) { newluminance = 0; }
+            changed=1;
+            break;
+
+        case ',':
+            if(newluminance==0) { newluminance = 7; } else { newluminance--; }
+            changed=1;
+            break;
+        
+        case CH_ESC:
+        case CH_STOP:
+            changed=0;
+            bordercolor(screenborder);
+            break;
+
+        default:
+            break;
+        }
+
+        if(changed == 1)
+        {
+            bordercolor(TED_Attribute(newcolor,newluminance,0));
+            sprintf(buffer,"color: %2i lum: %2i",newcolor,newluminance);
+            cputsxy(4,8,buffer);
+        }
+    } while (key != CH_ENTER && key != CH_ESC && key != CH_STOP );
+    
+    if(changed=1)
+    {
+        screenborder=TED_Attribute(newcolor,newluminance,0);                
+        sprintf(pulldownmenutitles[0][3],"border:     %3i ",screenborder);
+    }
+    
+    windowrestore(0);
+    revers(0);
+    textcolor(TED_Attribute(plotcolor,plotluminance,plotblink));    
+}
+
+void versioninfo()
+{
+    windownew(2,5,15,35,1);
+    revers(1);
+    textcolor(mc_menupopup);
+    cputsxy(4,6,"version information and credits");
+    cputsxy(4,8,"ted screen editor");
+    cputsxy(4,9,"written in 2022 by xander mol");
+    sprintf(buffer,"version: %s",version);
+    cputsxy(4,11,buffer);
+    cputsxy(4,13,"source, docs and credits at:");
+    cputsxy(4,14,"github.com/xahmol/tedscreemedit");
+    cputsxy(4,16,"(c) 2022, idreamtin8bits.com");
+    cputsxy(4,18,"press a key to continue.");
+    cgetc();
+    windowrestore(0);
+    revers(0);
+    textcolor(TED_Attribute(plotcolor,plotluminance,plotblink));
+}
+
+void chareditor()
+{
+    unsigned char x,y,char_screencode,key;
+    unsigned char xpos=0;
+    unsigned char ypos=0;
+    unsigned char char_present[8];
+    unsigned char char_copy[8];
+    unsigned char char_undo[8];
+    unsigned char char_buffer[8];
+    unsigned int char_address;
+    unsigned char charchanged = 0;
+    char* ptrend;
+
+    if(!charsetchanged) { TED_ROM_Memcopy(charaddress(0,0),charaddress(0,1),4); }
+
+    char_screencode = plotscreencode;
+    char_address = charaddress(char_screencode,1);
+    charsetchanged=1;
+    TED_CharsetCustom(CHARSET);
+    strcpy(programmode,"charedit");
+
+    for(y=0;y<8;y++)
+    {
+        char_present[y]=PEEK(char_address+y);
+        char_undo[y]=char_present[y];
+    }
+
+    showchareditfield();
+    showchareditgrid(char_screencode);
+    textcolor(mc_menupopup);
+    do
+    {
+        if(showbar) { printstatusbar(); }
+        gotoxy(xpos+31,ypos+3);
+
+        key = cgetc();
+
+        switch (key)
+        {
+        // Movement
+        case CH_CURS_RIGHT:
+            if(xpos<7) {xpos++; }
+            gotoxy(xpos+31,ypos+3);
+            break;
+        
+        case CH_CURS_LEFT:
+            if(xpos>0) {xpos--; }
+            gotoxy(xpos+31,ypos+3);
+            break;
+        
+        case CH_CURS_DOWN:
+            if(ypos<7) {ypos++; }
+            gotoxy(xpos+31,ypos+3);
+            break;
+
+        case CH_CURS_UP:
+            if(ypos>0) {ypos--; }
+            gotoxy(xpos+31,ypos+3);
+            break;
+
+        // Next or previous character
+        case '+':
+        case '-':
+            if(key=='+')
+            {
+                char_screencode++;
+            }
+            else
+            {
+                char_screencode--;
+            }
+            charchanged=1;
+            break;
+
+        // Toggle bit
+        case CH_SPACE:
+            char_present[ypos] ^= 1 << (7-xpos);
+            POKE(char_address+ypos,char_present[ypos]);
+            showchareditgrid(char_screencode);
+            break;
+
+        // Inverse
+        case 'i':
+            for(y=0;y<8;y++)
+            {
+                char_present[y] ^= 0xff;
+                POKE(char_address+y,char_present[y]);
+            }
+            showchareditgrid(char_screencode);
+            break;
+
+        // Delete
+        case CH_DEL:
+            for(y=0;y<8;y++)
+            {
+                char_present[y] = 0;
+                POKE(char_address+y,char_present[y]);
+            }
+            showchareditgrid(char_screencode);
+            break;
+
+        // Undo
+        case 'z':
+            for(y=0;y<8;y++)
+            {
+                char_present[y] = char_undo[y];
+                POKE(char_address+y,char_present[y]);
+            }
+            showchareditgrid(char_screencode);
+            break;
+
+        // Restore from system font
+        case 's':
+            for(y=0;y<8;y++)
+            {
+                char_present[y] = TED_ROM_Peek(charaddress(char_screencode,0)+y);
+                POKE(char_address+y,char_present[y]);
+            }
+            showchareditgrid(char_screencode);
+            break;
+
+        // Copy
+        case 'c':
+            for(y=0;y<8;y++)
+            {
+                char_copy[y] = char_present[y];
+            }
+            break;
+
+        // Paste
+        case 'v':
+            for(y=0;y<8;y++)
+            {
+                char_present[y] = char_copy[y];
+                POKE(char_address+y,char_present[y]);
+            }
+            showchareditgrid(char_screencode);
+            break;
+
+        // Mirror y axis
+        case 'y':
+            for(y=0;y<8;y++)
+            {
+                POKE(char_address+y,char_present[7-y]);
+            }
+            for(y=0;y<8;y++)
+            {
+                char_present[y]=PEEK(char_address+y);
+            }
+            showchareditgrid(char_screencode);
+            break;
+
+        // Mirror x axis
+        case 'x':
+            for(y=0;y<8;y++)
+            {
+                char_present[y] = (char_present[y] & 0xF0) >> 4 | (char_present[y] & 0x0F) << 4;
+                char_present[y] = (char_present[y] & 0xCC) >> 2 | (char_present[y] & 0x33) << 2;
+                char_present[y] = (char_present[y] & 0xAA) >> 1 | (char_present[y] & 0x55) << 1;
+                POKE(char_address+y,char_present[y]);
+            }
+            showchareditgrid(char_screencode);
+            break;
+
+        // Rotate clockwise
+        case 'o':
+            for(y=0;y<8;y++)
+            {
+                for(x=0;x<8;x++)
+                {
+                    if(char_present[y] & (1<<(7-x)))
+                    {
+                        char_buffer[x] |= (1<<y);
+                    }
+                    else
+                    {
+                        char_buffer[x] &= ~(1<<y);
+                    }
+                }
+            }
+            for(y=0;y<8;y++)
+            {
+                char_present[y]=char_buffer[y];
+                POKE(char_address+y,char_present[y]);
+            }
+            showchareditgrid(char_screencode);
+            break;
+
+        // Scroll up
+        case 'u':
+            for(y=1;y<8;y++)
+            {
+                char_buffer[y-1]=char_present[y];
+            }
+            char_buffer[7]=char_present[0];
+            for(y=0;y<8;y++)
+            {
+                char_present[y]=char_buffer[y];
+                POKE(char_address+y,char_present[y]);
+            }
+            showchareditgrid(char_screencode);
+            break;
+
+        // Scroll down
+        case 'd':
+            for(y=1;y<8;y++)
+            {
+                char_buffer[y]=char_present[y-1];
+            }
+            char_buffer[0]=char_present[7];
+            for(y=0;y<8;y++)
+            {
+                char_present[y]=char_buffer[y];
+                POKE(char_address+y,char_present[y]);
+            }
+            showchareditgrid(char_screencode);
+            break;
+
+        // Scroll right
+        case 'r':
+            for(y=0;y<8;y++)
+            {
+                char_buffer[y]=char_present[y]>>1;
+                if(char_present[y]&0x01) { char_buffer[y]+=0x80; }
+            }
+            for(y=0;y<8;y++)
+            {
+                char_present[y]=char_buffer[y];
+                POKE(char_address+y,char_present[y]);
+            }
+            showchareditgrid(char_screencode);
+            break;
+        
+        // Scroll left
+        case 'l':
+            for(y=0;y<8;y++)
+            {
+                char_buffer[y]=char_present[y]<<1;
+                if(char_present[y]&0x80) { char_buffer[y]+=0x01; }
+            }
+            for(y=0;y<8;y++)
+            {
+                char_present[y]=char_buffer[y];
+                POKE(char_address+y,char_present[y]);
+            }
+            showchareditgrid(char_screencode);
+            break;
+
+        // Hex edit
+        case 'h':
+            sprintf(buffer,"%2x",char_present[ypos]);
+            revers(1);
+            textInput(28,ypos+3,buffer,2);
+            char_present[ypos] = (unsigned char)strtol(buffer,&ptrend,16);
+            gotoxy(31+xpos,3+ypos);
+            cursor(1);
+            revers(0);
+            POKE(char_address+ypos,char_present[ypos]);
+            showchareditgrid(char_screencode);
+            break;
+
+        // Toggle statusbar
+        case CH_F6:
+            togglestatusbar();
+            break;
+
+        // Help screen
+        case CH_F8:
+            windowrestore(0);
+            helpscreen_load(2);
+            showchareditfield();
+            showchareditgrid(char_screencode);
+            break;
+
+        default:
+            // 0-9: Favourites select
+            if(key>47 && key<58)
+            {
+                char_screencode = favourites[key-48];
+                charchanged=1;
+            }
+            // Shift 1-9 or *: Store present character in favourites slot
+            if(key>32 && key<43)
+            {
+                favourites[key-33] = char_screencode;
+            }
+            break;
+        }
+
+        if(charchanged)
+        {
+            charchanged=0;
+            char_address = charaddress(char_screencode,1);
+            for(y=0;y<8;y++)
+            {
+                char_present[y]=PEEK(char_address+y);
+                char_undo[y]=char_present[y];
+            }
+            showchareditgrid(char_screencode);
+        }
+    } while (key != CH_ESC && key != CH_STOP);
+
+    windowrestore(0);
+    textcolor(TED_Attribute(plotcolor,plotluminance,plotblink));
+    plotscreencode = char_screencode;
+    gotoxy(screen_col,screen_row);
+    TED_Plot(screen_row,screen_col,plotscreencode,TED_Attribute(plotcolor,plotluminance,plotblink));
+    strcpy(programmode,"main");
+}
+
 void mainmenuloop()
 {
     // Function for main menu selection loop
@@ -1051,22 +2879,18 @@ void mainmenuloop()
         switch (menuchoice)
         {
         case 11:
-            loadoverlay(1);
             resizewidth();
             break;
 
         case 12:
-            loadoverlay(2);
             resizeheight();
             break;
         
         case 13:
-            loadoverlay(3);
             changebackgroundcolor();
             break;
 
         case 14:
-            loadoverlay(3);
             changebordercolor();
             break;
 
@@ -1089,37 +2913,30 @@ void mainmenuloop()
             break;
 
         case 21:
-            loadoverlay(3);
             savescreenmap();
             break;
 
         case 22:
-            loadoverlay(3);
             loadscreenmap();
             break;
         
         case 23:
-            loadoverlay(3);
             saveproject();
             break;
         
         case 24:
-            loadoverlay(3);
             loadproject();
             break;
         
         case 31:
-            loadoverlay(3);
             loadcharset();
             break;
         
         case 32:
-            loadoverlay(3);
             savecharset();
             break;
 
         case 41:
-            loadoverlay(3);
             versioninfo();
             break;
 
@@ -1292,13 +3109,11 @@ void main()
 
         // Character eddit mode
         case 'e':
-            loadoverlay(4);
             chareditor();
             break;
 
         // Palette for character selection
         case 'p':
-            loadoverlay(1);
             palette();
             break;
 
@@ -1314,31 +3129,26 @@ void main()
 
         // Write mode: type in screencodes
         case 'w':
-            loadoverlay(1);
             writemode();
             break;
         
         // Color mode: type colors
         case 'c':
-            loadoverlay(1);
             colorwrite();
             break;
 
         // Line and box mode
         case 'l':
-            loadoverlay(2);
             lineandbox(1);
             break;
 
         // Move mode
         case 'm':
-            loadoverlay(2);
             movemode();
             break;
 
         // Select mode
         case 's':
-            loadoverlay(2);
             selectmode();
             break;
 

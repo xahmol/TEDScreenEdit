@@ -10,11 +10,11 @@
 # - CC65 compiled and included in path with sudo make avail
 # - ZIP packages installed: sudo apt-get install zip
 
-SOURCESMAIN = src/main.c src/ted_core.c src/overlay1.c src/overlay2.c src/overlay3.c src/overlay4.c
+SOURCESMAIN = src/main.c src/ted_core.c
 #SOURCESGEN = src/prggenerator.c
 SOURCESLIB = src/ted_core_assembly.s src/visualpetscii.s
 #GENLIB = src/prggenerate.s src/prggenmaco.s
-OBJECTS = tedse.ovl1.prg tedse.ovl2.prg tedse.ovl3.prg tedse.ovl4.prg tedse.tscr.prg tedse.hsc1.prg tedse.hsc2.prg tedse.hsc3.prg tedse.hsc4.prg tedse.petv.prg
+OBJECTS = tedse.tscr.prg tedse.hsc1.prg tedse.hsc2.prg tedse.hsc3.prg tedse.hsc4.prg tedse.petv.prg
 
 ZIP = tedscreenedit-v099-$(shell date "+%Y%m%d-%H%M").zip
 D64 = tedse.d64
@@ -52,10 +52,6 @@ $(GEN): $(GENLIB) $(SOURCESGEN:.c=.o)
 $(D64):	$(MAIN) $(OBJECTS)
 	c1541 -format "tedse,xm" d64 $(D64)
 	c1541 -attach $(D64) -write tedse.prg tedse
-	c1541 -attach $(D64) -write tedse.ovl1.prg tedse.ovl1
-	c1541 -attach $(D64) -write tedse.ovl2.prg tedse.ovl2
-	c1541 -attach $(D64) -write tedse.ovl3.prg tedse.ovl3
-	c1541 -attach $(D64) -write tedse.ovl4.prg tedse.ovl4
 	c1541 -attach $(D64) -write tedse.tscr.prg tedse.tscr
 	c1541 -attach $(D64) -write tedse.hsc1.prg tedse.hsc1
 	c1541 -attach $(D64) -write tedse.hsc2.prg tedse.hsc2
@@ -67,13 +63,9 @@ $(D64):	$(MAIN) $(OBJECTS)
 #	c1541 -attach $(D64) -write tedse2prg.mac.prg tedse2prg.mac
 
 $(D81):	$(MAIN) $(OBJECTS)
-	c1541 -format "tedse,xm" d64 $(D81)
+	c1541 -format "tedse,xm" d81 $(D81)
 	c1541 -attach $(D81) -write tedse.prg tedse
 	c1541 -attach $(D81) -write careers.chrs.prg charset
-	c1541 -attach $(D81) -write tedse.ovl1.prg tedse.ovl1
-	c1541 -attach $(D81) -write tedse.ovl2.prg tedse.ovl2
-	c1541 -attach $(D81) -write tedse.ovl3.prg tedse.ovl3
-	c1541 -attach $(D81) -write tedse.ovl4.prg tedse.ovl4
 	c1541 -attach $(D81) -write tedse.tscr.prg tedse.tscr
 	c1541 -attach $(D81) -write tedse.hsc1.prg tedse.hsc1
 	c1541 -attach $(D81) -write tedse.hsc2.prg tedse.hsc2

@@ -9,10 +9,10 @@
 #define PETSCIIMAP          0x0347      // PETSCII map in cassette/RS232 buffer
 #define COLORMEMORY         0x0800      // Color memory base address
 #define SCREENMEMORY        0x0C00      // Screen memory base address
-#define WINDOWBASEADDRESS   0xC000      // Base address for windows system data, 8k reserved
-#define CHARSET             0xC800      // Base address for redefined charset
-#define SCREENMAPBASE       0xD000      // Base address for screen map
-#define MEMORYLIMIT         0xCFFF      // Upper memory limit address for address map
+#define WINDOWBASEADDRESS   0xB000      // Base address for windows system data, 8k reserved
+#define CHARSET             0xB800      // Base address for redefined charset
+#define SCREENMAPBASE       0xC000      // Base address for screen map
+#define MEMORYLIMIT         0xFCFF      // Upper memory limit address for address map
 
 /* Global variables */
 extern unsigned char overlay_active;
