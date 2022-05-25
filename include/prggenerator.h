@@ -1,7 +1,7 @@
 #ifndef __PRGGENERATOR_H_
 #define __PRGGENERATOR_H_
 
-#define ASS_SIZE        0x0113
+#define ASS_SIZE        0x0143
 #define SCREEN_SIZE     0x0800
 #define CHAR_SIZE       0x0400
 
@@ -10,6 +10,8 @@
 
 #define BGCOLORADDRESS  0x107B
 #define BORDERCOLORADDR 0x107C
-#define CHARSET_ADDRESS 0x107E
+#define CHARSET_ADDRESS 0x107D
+#define CHARSET_LOWER   0x107F
+#define SCREENSTART     0x113E
 
 #endif // __PRGGENERATOR_H_

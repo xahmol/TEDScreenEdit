@@ -25,6 +25,7 @@ unsigned int screenheight;
 unsigned char screenbackground;
 unsigned char screenborder;
 unsigned char charsetchanged;
+unsigned char charsetlowercase;
 unsigned int r = 0;
 unsigned char x,newtargetdevice,error,key;
 unsigned char valid = 0;
@@ -290,10 +291,11 @@ void main()
         exit(1);
     }
     charsetchanged          = projbuffer[ 0];
+    charsetlowercase        = projbuffer[ 1];
     screenwidth             = projbuffer[ 4]*256+projbuffer[ 5];
     screenheight            = projbuffer[ 6]*256+projbuffer [7];
     screenbackground        = projbuffer[10];
-    screenborder            = projbuffer[11];
+    screenborder            = projbuffer[20];
 
     if(screenwidth!=40 || screenheight!=25)
     {
@@ -314,7 +316,6 @@ void main()
         cprintf("Load error on loading assembly code.");
         exit(1);
     }
-    address+=ASS_SIZE;
 
     // Poke version string
     cprintf("Poking version string.\n\r");
@@ -324,9 +325,11 @@ void main()
     }
 
     // Load screen
+    address=SCREENSTART;
     cprintf("Loading screen data at %4X.\n\r",address);
     POKE(BGCOLORADDRESS,screenbackground);                   // Set background color
     POKE(BORDERCOLORADDR,screenborder);                      // Set border color
+    POKE(CHARSET_LOWER,charsetlowercase);                    // Set lowercase flag
     sprintf(buffer,"%s.scrn",filename);
     length = load_save_data(buffer,targetdevice,address,SCREEN_SIZE,0);
     if(length<=address)
@@ -353,7 +356,7 @@ void main()
     }
 
     // Save complete generated program
-    cprintf("Saving generated program from %4X to %4X.\n\r",BASEADDRESS,address);
+    cprintf("Saving from %4X to %4X.\n\r",BASEADDRESS,address);
     if(load_save_data(filedest,targetdevice,BASEADDRESS,address,1))
     {
         cprintf("Save error on writing generated program.");
