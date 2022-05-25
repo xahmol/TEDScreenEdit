@@ -1702,7 +1702,7 @@ void lineandbox(unsigned char draworselect)
         if(showbar) { initstatusbar(); }
         if(key==CH_ENTER) { select_accept=1; }
     }
-    if(draworselect)
+    if(draworselect ||key!=CH_ESC || key != CH_STOP )
     {
         strcpy(programmode,"main");
     }
@@ -2570,6 +2570,7 @@ void chareditor()
     if(!charsetchanged) { TED_ROM_Memcopy(charaddress(0,0),charaddress(0,1),4); }
 
     char_screencode = plotscreencode;
+    if(char_screencode > 127) { char_screencode -= 128; }
     char_address = charaddress(char_screencode,1);
     charsetchanged=1;
     TED_CharsetCustom(CHARSET);
@@ -2626,6 +2627,7 @@ void chareditor()
                 char_screencode--;
             }
             charchanged=1;
+            if(char_screencode > 127) { char_screencode -= 128; }
             break;
 
         // Toggle bit

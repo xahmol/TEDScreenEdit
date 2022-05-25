@@ -11,10 +11,10 @@
 # - ZIP packages installed: sudo apt-get install zip
 
 SOURCESMAIN = src/main.c src/ted_core.c
-#SOURCESGEN = src/prggenerator.c
+SOURCESGEN = src/prggenerator.c
 SOURCESLIB = src/ted_core_assembly.s src/visualpetscii.s
-#GENLIB = src/prggenerate.s src/prggenmaco.s
-OBJECTS = tedse.tscr.prg tedse.hsc1.prg tedse.hsc2.prg tedse.hsc3.prg tedse.hsc4.prg tedse.petv.prg
+GENLIB = src/prggenerate.s
+OBJECTS = tedse.tscr.prg tedse.hsc1.prg tedse.hsc2.prg tedse.hsc3.prg tedse.hsc4.prg tedse.petv.prg tedse2prg.ass.prg
 
 ZIP = tedscreenedit-v099-$(shell date "+%Y%m%d-%H%M").zip
 D64 = tedse.d64
@@ -22,19 +22,27 @@ D81 = tedse.d81
 README = README.pdf
 
 MAIN = tedse.prg
-#GEN = tedse2prg.prg
+GEN = tedse2prggcode.prg
+GENPACKED = tedse2prg.prg
 
 CC65_TARGET = plus4
 CC = cl65
 CFLAGS  = -t $(CC65_TARGET) --create-dep $(<:.c=.d) -Os -I include
 LDFLAGSMAIN = -t $(CC65_TARGET) -C tedse-cc65config.cfg -m $(MAIN).map
-#LDFLAGSGEN = -t $(CC65_TARGET) -C tedsegen-cc65config.cfg -m $(GEN).map
+LDFLAGSGEN = -t $(CC65_TARGET) -C tedsegen-cc65config.cfg -m $(GEN).map
+
+# Path variables
+EXOMIZER = /home/xahmol/exomizer/src/exomizer
+
+# Exomizer parameters
+SYSADDRESS = 0x5000
+EXOPARAMS = sfx $(SYSADDRESS) -t 4
 
 ########################################
 
 .SUFFIXES:
 .PHONY: all clean deploy vice
-all: $(MAIN) $(GEN) $(D64) $(D81)
+all: $(MAIN) $(GEN) $(GENPACKED) $(D64) $(D81)
 
 ifneq ($(MAKECMDGOALS),clean)
 -include $(SOURCESMAIN:.c=.d)
@@ -49,6 +57,9 @@ $(MAIN): $(SOURCESLIB) $(SOURCESMAIN:.c=.o)
 $(GEN): $(GENLIB) $(SOURCESGEN:.c=.o)
 	$(CC) $(LDFLAGSGEN) -o $@ $^
 
+$(GENPACKED): $(GEN)
+	$(EXOMIZER) $(EXOPARAMS) -o $(GENPACKED) $(GEN)
+
 $(D64):	$(MAIN) $(OBJECTS)
 	c1541 -format "tedse,xm" d64 $(D64)
 	c1541 -attach $(D64) -write tedse.prg tedse
@@ -58,9 +69,8 @@ $(D64):	$(MAIN) $(OBJECTS)
 	c1541 -attach $(D64) -write tedse.hsc3.prg tedse.hsc3
 	c1541 -attach $(D64) -write tedse.hsc4.prg tedse.hsc4
 	c1541 -attach $(D64) -write tedse.petv.prg tedse.petv
-#	c1541 -attach $(D64) -write tedse2prg.prg tedse2prg
-#	c1541 -attach $(D64) -write tedse2prg.ass.prg tedse2prg.ass
-#	c1541 -attach $(D64) -write tedse2prg.mac.prg tedse2prg.mac
+	c1541 -attach $(D64) -write tedse2prg.prg tedse2prg
+	c1541 -attach $(D64) -write tedse2prg.ass.prg tedse2prg.ass
 
 $(D81):	$(MAIN) $(OBJECTS)
 	c1541 -format "tedse,xm" d81 $(D81)
@@ -72,9 +82,8 @@ $(D81):	$(MAIN) $(OBJECTS)
 	c1541 -attach $(D81) -write tedse.hsc3.prg tedse.hsc3
 	c1541 -attach $(D81) -write tedse.hsc4.prg tedse.hsc4
 	c1541 -attach $(D81) -write tedse.petv.prg tedse.petv
-#	c1541 -attach $(D81) -write tedse2prg.prg tedse2prg
-#	c1541 -attach $(D81) -write tedse2prg.ass.prg tedse2prg.ass
-#	c1541 -attach $(D81) -write tedse2prg.mac.prg tedse2prg.mac
+	c1541 -attach $(D81) -write tedse2prg.prg tedse2prg
+	c1541 -attach $(D81) -write tedse2prg.ass.prg tedse2prg.ass
 
 #$(ZIP): $(MAIN) $(OBJECTS) $(D64) $(D71) $(D81) $(README)
 #	zip $@ $^
