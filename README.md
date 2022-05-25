@@ -45,7 +45,7 @@ Commodore Plus/4 column screen editor
 ## Version history and download
 ([Back to contents](#contents))
 
-[Link to latest build](tedscreenedit-v099-20220525-2330.zip)
+[Link to latest build]([tedscreenedit-v099-20220525-2330.zip](https://github.com/xahmol/TEDScreenEdit/raw/main/tedscreenedit-v099-20220525-2330.zip))
 
 Version v099-20220525-2330:
 - First released beta version based on [VDCSE](https://github.com/xahmol/VDCScreenEdit) version v099-20220324-1527
