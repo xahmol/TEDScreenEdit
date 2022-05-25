@@ -50,12 +50,6 @@ Commodore 128 80 column screen editor
 Version v099-20220525-1641:
 - First released beta version based on [VDCSE](https://github.com/xahmol/VDCScreenEdit) version v099-20220324-1527
 
-## Known issues and bugs
-
-[Crash on save screen after being idle for half an hour in VICE](https://github.com/xahmol/TEDScreenEdit/issues/14)
-
-Advice because of this bug is that if you use VICE instead of original hardware to run TEDSE to save your work often, at least every 15 minutes (which might be a good advice on other platforms as well).
-
 ## Introduction
 ([Back to contents](#contents))
 
