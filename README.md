@@ -45,42 +45,10 @@ Commodore 128 80 column screen editor
 ## Version history and download
 ([Back to contents](#contents))
 
-[Link to latest build](https://github.com/xahmol/TEDScreenEdit/raw/main/TEDscreenedit-v099-20220324-1527.zip)
+[Link to latest build](https://github.com/xahmol/TEDScreenEdit/raw/main/tedscreenedit-v099-20220525-1641.zip)
 
-Version v099-20220324-1527:
-- Major overhaul of memory management by moving many functions to memory overlays. Gives room for new functionality (as before I did not have room left)
-- Added statusbar. Is enabled by default, can be toggled to show or not by pressing F6 in every mode.
-- Statusbar autohides if you move the cursor to the lowest visible line, shows again if enabled if moving up again
-- Statusbar shows present mode, co-ordinates, plot screencode (visual and as hexcode), plot color (visual and as number) and shows REV UND BLI ALT if these attributes (reverse, underline, blink and alternate charset) are enabled, shows nothing if disabled. Also hints at F8 for help.
-- Added Try mode: pressing T shows the present selected character as plotted without cursor blinking. Pressing space in this mode plots the character for real, any other character cancels and returns without plotting.
-- Tweaked pulldown menus so that the cyan also is visible different from yellow on a monochrome monitor. Added a minus to show the actual selection to also be able to distinguish selected option without needing the colors.
-- Added cancel option in all load and save dialogues by pressing ESC or STOP on devide ID or filename input
-- Small change: title screen shows load progress
-
-Version v090-20220309-1618:
-- Bugfix in 'does file exist' check
-
-Version v090-20220307-1210:
-- Minor tweaks to TEDSE2PRG:
-    - Show message if started in 40 column mode
-    - Leave program with standard charset and clear screen (in 80 column mode)
-
-Version 090-20220227-0036:
-- Added TEDSE2PRG utility
-
-Version 090-20220221-0920:
-- Added palette mode, including visual PETSCII mode
-- Added favorite slots
-- Changing selected character in the character editor now also changes selected character in main mode
-- Made the disk images bootable
-- Other minor optimizations
-- (thanks to jab / Artline Designs for hints and inspiration )
-
-Version 090-20220103-1000:
-- Bugfix for plotting not working with offsets bigger than zero
-
-Version 090-20210922-2251:
-- First released beta version
+Version v099-20220525-1641:
+- First released beta version based on [VDCSE](https://github.com/xahmol/VDCScreenEdit) version v099-20220324-1527
 
 ## Known issues and bugs
 
