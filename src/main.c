@@ -1082,66 +1082,82 @@ void writemode()
         // Color control with Control and Commodore keys plus 0-9 key
         case CH_BLACK:
             change_plotcolor(0);
+            change_plotluminance(0);
             break;
         
         case CH_WHITE:
             change_plotcolor(1);
+            change_plotluminance(7);
             break;
         
         case CH_RED:
             change_plotcolor(2);
+            change_plotluminance(3);
             break;
 
         case CH_CYAN:
             change_plotcolor(3);
+            change_plotluminance(6);
             break;
 
         case CH_PURPLE:
             change_plotcolor(4);
+            change_plotluminance(4);
             break;
 
         case CH_GREEN:
             change_plotcolor(5);
+            change_plotluminance(3);
             break;
 
         case CH_BLUE:
             change_plotcolor(6);
+            change_plotluminance(4);
             break;
 
         case CH_YELLOW:
             change_plotcolor(7);
+            change_plotluminance(7);
             break;
 
         case CH_ORANGE:
             change_plotcolor(8);
+            change_plotluminance(4);
             break;
 
         case CH_BROWN:
             change_plotcolor(9);
+            change_plotluminance(2);
             break;
             
         case CH_YELGREEN:
             change_plotcolor(10);
+            change_plotluminance(5);
             break;
 
         case CH_PINK:
             change_plotcolor(11);
+            change_plotluminance(6);
             break;
 
         case CH_BLUEGREEN:
             change_plotcolor(12);
+            change_plotluminance(5);
             break;
 
         case CH_LBLUE:
             change_plotcolor(13);
+            change_plotluminance(6);
             break;
 
         case CH_DBLUE:
             change_plotcolor(14);
+            change_plotluminance(2);
             break;
 
         case CH_LGREEN:
             change_plotcolor(15);
+            change_plotluminance(5);
             break;
 
         // Write printable character                
@@ -2351,7 +2367,7 @@ void changebackgroundcolor()
     cputsxy(4,11,"+:     increase color number");
     cputsxy(4,12,"-:     decrease color number");
     cputsxy(4,13,".:     increase luminance");
-    cputsxy(4,14,".:     decrease luminance");
+    cputsxy(4,14,",:     decrease luminance");
     cputsxy(4,15,"enter: accept color");
     cputsxy(4,16,"esc:   cancel");
 
@@ -2470,7 +2486,7 @@ void changebordercolor()
     cputsxy(4,11,"+:     increase color number");
     cputsxy(4,12,"-:     decrease color number");
     cputsxy(4,13,".:     increase luminance");
-    cputsxy(4,14,".:     decrease luminance");
+    cputsxy(4,14,",:     decrease luminance");
     cputsxy(4,15,"enter: accept color");
     cputsxy(4,16,"esc:   cancel");
 

@@ -75,7 +75,6 @@ $(D64):	$(MAIN) $(OBJECTS)
 $(D81):	$(MAIN) $(OBJECTS)
 	c1541 -format "tedse,xm" d81 $(D81)
 	c1541 -attach $(D81) -write tedse.prg tedse
-	c1541 -attach $(D81) -write careers.chrs.prg charset
 	c1541 -attach $(D81) -write tedse.tscr.prg tedse.tscr
 	c1541 -attach $(D81) -write tedse.hsc1.prg tedse.hsc1
 	c1541 -attach $(D81) -write tedse.hsc2.prg tedse.hsc2
@@ -85,7 +84,7 @@ $(D81):	$(MAIN) $(OBJECTS)
 	c1541 -attach $(D81) -write tedse2prg.prg tedse2prg
 	c1541 -attach $(D81) -write tedse2prg.ass.prg tedse2prg.ass
 
-$(ZIP): $(MAIN) $(OBJECTS) $(D64) $(D81) $(README)
+$(ZIP): $(D64) $(D81) $(README)
 	zip $@ $^
 
 clean:
