@@ -14,7 +14,7 @@ SOURCESMAIN = src/main.c src/ted_core.c
 SOURCESGEN = src/prggenerator.c
 SOURCESLIB = src/ted_core_assembly.s src/visualpetscii.s
 GENLIB = src/prggenerate.s
-OBJECTS = tedse.tscr.prg tedse.hsc1.prg tedse.hsc2.prg tedse.hsc3.prg tedse.hsc4.prg tedse.petv.prg tedse2prg.ass.prg
+OBJECTS = tedse.tscr.prg tedse.hsc1.prg tedse.hsc2.prg tedse.hsc3.prg tedse.hsc4.prg tedse.petv.prg tedse2prg.prg tedse2prg.ass.prg
 
 ZIP = tedscreenedit-v099-$(shell date "+%Y%m%d-%H%M").zip
 D64 = tedse.d64
@@ -42,7 +42,7 @@ EXOPARAMS = sfx $(SYSADDRESS) -t 4
 
 .SUFFIXES:
 .PHONY: all clean deploy vice
-all: $(MAIN) $(GEN) $(GENPACKED) $(D64) $(D81)
+all: $(MAIN) $(GEN) $(GENPACKED) $(D64) $(D81) $(ZIP)
 
 ifneq ($(MAKECMDGOALS),clean)
 -include $(SOURCESMAIN:.c=.d)
@@ -85,12 +85,12 @@ $(D81):	$(MAIN) $(OBJECTS)
 	c1541 -attach $(D81) -write tedse2prg.prg tedse2prg
 	c1541 -attach $(D81) -write tedse2prg.ass.prg tedse2prg.ass
 
-#$(ZIP): $(MAIN) $(OBJECTS) $(D64) $(D71) $(D81) $(README)
-#	zip $@ $^
+$(ZIP): $(MAIN) $(OBJECTS) $(D64) $(D81) $(README)
+	zip $@ $^
 
 clean:
 	$(RM) $(SOURCESMAIN:.c=.o) $(SOURCESMAIN:.c=.d) $(MAIN) $(MAIN).map
-#	$(RM) $(SOURCESGEN:.c=.o) $(SOURCESGEN:.c=.d) $(GEN) $(GEN).map
+	$(RM) $(SOURCESGEN:.c=.o) $(SOURCESGEN:.c=.d) $(GEN) $(GEN).map
 
 # To run software in VICE
 vice: $(D81)

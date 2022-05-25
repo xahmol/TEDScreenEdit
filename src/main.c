@@ -79,7 +79,7 @@ char pulldownmenutitles[5][6][17] = {
      "save charset    "},
     {"version/credits ",
      "exit program    "},
-    {"yes",\
+    {"yes",
      "no "}
 };
 
@@ -499,7 +499,7 @@ unsigned char menupulldown(unsigned char xpos, unsigned char ypos, unsigned char
     {
         gotoxy(xpos,ypos+menuchoice-1);
         textcolor(mc_pd_select);
-        cprintf("-%s ",pulldownmenutitles[menunumber-1][menuchoice-1]);
+        cprintf("-%s",pulldownmenutitles[menunumber-1][menuchoice-1]);
         
         do
         {
@@ -844,7 +844,7 @@ void helpscreen_load(unsigned char screennumber)
 
     if(TED_Load(buffer,bootdevice,COLORMEMORY)<=COLORMEMORY)
     {
-        messagepopup("insert application disk to view help.",0);
+        messagepopup("insert application disk.",0);
     }
     
     cgetc();

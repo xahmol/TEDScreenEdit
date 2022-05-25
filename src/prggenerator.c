@@ -342,7 +342,7 @@ void main()
     // Load standard charset if defined
     if(charsetchanged)
     {
-        cprintf("Loading harset at %4X.\n\r",address);
+        cprintf("Loading charset at %4X.\n\r",address);
         POKE(CHARSET_ADDRESS,address&0xff);                   // Set low byte charset address
         POKE(CHARSET_ADDRESS+1,(address>>8)&0xff);            // Set high byte charset address
         sprintf(buffer,"%s.chrs",filename);
