@@ -1,5 +1,5 @@
 # TED Screen Editor
-Commodore Plus/4 screen editor
+Commodore 128 80 column screen editor
 
 ## Contents:
 
@@ -138,7 +138,7 @@ Leave the title screen by pressing any key.
 
 After the title screen, the program starts in this mode. At start the screen shows this:
 
-![Screen in main mode](https://github.com/xahmol/TEDScreenEdit/blob/main/screenshots/TEDSE%20empty%20start%20screen.png?raw=true)
+![Screen in main mode](https://github.com/xahmol/TEDScreenEdit/blob/main/screenshots/TEDSE%20empty%20startscreen.png?raw=true)
 
 Only a blinking cursor with the presently selected [screencode](https://sta.c64.org/cbm64scr.html) and attributes is visible.
 
@@ -293,6 +293,14 @@ The color can be selected with the **+** and **-** keys to increase resp. decrea
 
 ![Change background color](https://github.com/xahmol/TEDScreenEdit/blob/main/screenshots/TEDSE%20Screen%20menu%20-%20bgcolor.png?raw=true)
 
+*Border: Change border color*
+
+Select the background color. Note that if the chosen color is not black or grey, the menu and popup colors will be changed to black on colors with intensity bit on, and white on colors with intensity bit off.
+
+The color can be selected with the **+** and **-** keys to increase resp. decrease the color value. The background color will change directly accordingly. Press **ENTER** to accept the new color, or **ESC** or **STOP** to cancel.
+
+![Change border color](https://github.com/xahmol/TEDScreenEdit/blob/main/screenshots/TEDSE%20Screen%20menu%20-%20bordercolor.png?raw=true)
+
 *Clear: Clear the canvas*
 
 Selecting this menu option will clear the canvas (which means filling the canvas with spaces, with attribute code for the color white, no other attributes). No confirmation will be asked (but undo is available if 64 KiB TED memory is present).
@@ -303,7 +311,7 @@ Similar to clear, but this will fill the canvas with the present selected [scree
 
 **_File menu_**
 
-![File menu](https://github.com/xahmol/TEDScreenEdit/blob/main/screenshots/TEDSE%20File%20menu.png?raw=true)
+![File menu](https://github.com/xahmol/TEDScreenEdit/blob/main/screenshots/TEDSE%20filemenu.png?raw=true)
 
 In general: pressing **ESC** or **STOP** on any devide ID or filename input dialogue cancels the file operation.
 
@@ -327,7 +335,7 @@ With this option you can load a screen from disk. Dialogue for this option is ve
 
 Similar to save screen, but with this option also the canvas metadata (width, height, present cursor position etc.) and the character sets if altered will be saved. Maximum filename length is now 10 to allow for an .xxxx suffix as it will save up to four files: filename.proj for the metadata, filename.scrn for the screen data, filename.chr1 for the standard charset and filename.chr2 for the alternate charset.
 
-![Save project](https://github.com/xahmol/TEDScreenEdit/blob/main/screenshots/TEDSE%20File%20menu%20-%20projsav.png?raw=true)
+![Save project](https://github.com/xahmol/TEDScreenEdit/blob/main/screenshots/TEDSE%20File%20menu%20-%20projsave.png?raw=true)
 
 *Load project*
 Loads a project: the metadata, the screen and the charsets. Provide the filename without the .xxxx suffix (.proj,.scrn,.chr1 and .chr2). As the canvas width and height is now read from the metadata, no user input on canvas size is needed.
@@ -336,22 +344,16 @@ Loads a project: the metadata, the screen and the charsets. Provide the filename
 
 **_Charset: Load and save character sets_**
 
-![Charset menu](https://github.com/xahmol/TEDScreenEdit/blob/main/screenshots/TEDSE%20Charset%20menu.png?raw=true)
+![Charset menu](https://github.com/xahmol/TEDScreenEdit/blob/main/screenshots/TEDSE%20charsetmenu.png?raw=true)
 
 In this menu you can select the options to Load or Save character sets. Select the options standard to load or save the standard character sets, or alternate for alternate character set.
 Dialogue of these options is similar to the screen save and load options: enter device ID and filename.
 
-**_Information: Version information, exit program or toggle Undo enabled_**
+**_Information: Version information, exit program_**
 
-Depending on the available TED memory size two or three options are available in this menu. As the Undo system is only available if 64 KiB TED memory size is present, the third submenu option here is only shown if 64 KiB TED memory is detected.
 
-*Menu with 16 KiB TED memory:*
+![Information menu](https://github.com/xahmol/TEDScreenEdit/blob/main/screenshots/TEDSE%20Screen%20Information%2016k.png?raw=true)
 
-![Information menu 16KiB TED](https://github.com/xahmol/TEDScreenEdit/blob/main/screenshots/TEDSE%20Screen%20Information%2016k.png?raw=true)
-
-*Menu with 64 KiB TED memory:*
-
-![Information menu 64KiB TED](https://github.com/xahmol/TEDScreenEdit/blob/main/screenshots/TEDSE%20Screen%20Information%2064k.png?raw=true)
 
 *Information*
 
